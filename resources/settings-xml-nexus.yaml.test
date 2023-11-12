@@ -1,0 +1,52 @@
+#@ load("@ytt:data", "data")
+#@ def in_list(key, list):
+#@  return hasattr(data.values.tap_values, key) and (data.values.tap_values[key] in list)
+#@ end
+#! This if condition ensures that this Golang Tekton pipeline is only created if the supply chain is testing or testing_scanning, and the TAP profile used is full, iterate or build.
+#@ if/end in_list('supply_chain', ['basic', 'testing', 'testing_scanning']) and in_list('profile', ['full', 'iterate', 'build']):
+---
+apiVersion: v1
+kind: Secret
+metadata:
+ name: settings-xml
+type: service.binding/maven
+stringData:
+  type: maven
+  provider: sample
+  settings.xml: |
+    <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+        <mirrors>
+          <mirror>
+            <id>internal-repository</id>
+            <name>maven-central</name>
+            <url>https://tkg-nexus.dha-tkgdemo.net:8443/repository/maven-central/</url>
+            <mirrorOf>*</mirrorOf>
+          </mirror>
+        </mirrors>
+
+        <servers>
+          <server>
+            <id>internal-repository</id>
+            <username>nexus-bot</username>
+            <password>VMware1!</password>
+          </server>
+        </servers>
+
+        <profiles>
+          <profile>
+            <id>nexus</id>
+            <repositories>
+              <repository>
+                <id>internal-repository</id>
+                <url>https://tkg-nexus.dha-tkgdemo.net:8443/repository</url>
+              </repository>
+            </repositories>
+          </profile>
+        </profiles>
+
+        <activeProfiles>
+          <activeProfile>nexus</activeProfile>
+        </activeProfiles>
+
+    </settings>

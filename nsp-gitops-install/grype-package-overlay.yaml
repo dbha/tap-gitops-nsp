@@ -1,0 +1,31 @@
+#@ load("@ytt:data", "data")
+#@ def in_list(key, list):
+#@  return hasattr(data.values.tap_values, key) and (data.values.tap_values[key] in list)
+#@ end
+#! This if condition ensures that this Nodejs Tekton pipeline is only created if the supply chain is testing or testing_scanning, and the TAP profile used is full, iterate or build.
+#@ if/end in_list('supply_chain', ['testing', 'testing_scanning']) and in_list('profile', ['full', 'iterate', 'build']):
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grype-package-overlay
+  namespace: tap-install
+  annotations:
+    kapp.k14s.io/change-rule: "delete after deleting tap"
+stringData:
+  grype-package-overlay.yaml: |
+    #@  load("@ytt:overlay", "overlay")
+    #@
+    #@  def matchGrypeScanners(index, left, right):
+    #@    if left["apiVersion"] != "packaging.carvel.dev/v1alpha1" or left["kind"] != "PackageInstall":
+    #@      return False
+    #@    end
+    #@    return "metadata" in left and "name" in left["metadata"] and left["metadata"]["name"].startswith("grype-scanner")
+    #@  end
+
+    #@overlay/match by=matchGrypeScanners, expects="0+"
+    ---
+    metadata:
+      annotations:
+        #@overlay/match expects="0+"
+        ext.packaging.carvel.dev/ytt-paths-from-secret-name.0: grype-airgap-overlay

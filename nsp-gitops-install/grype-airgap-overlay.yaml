@@ -1,0 +1,35 @@
+#@ load("@ytt:data", "data")
+#@ def in_list(key, list):
+#@  return hasattr(data.values.tap_values, key) and (data.values.tap_values[key] in list)
+#@ end
+#! This if condition ensures that this Nodejs Tekton pipeline is only created if the supply chain is testing or testing_scanning, and the TAP profile used is full, iterate or build.
+#@ if/end in_list('supply_chain', ['testing', 'testing_scanning']) and in_list('profile', ['full', 'iterate', 'build']):
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grype-airgap-overlay
+  namespace: tap-install
+  annotations:
+    kapp.k14s.io/change-rule: "delete after deleting tap"
+stringData:
+  grype-airgap-overlay-secrets.yaml: |
+    #@ load("@ytt:overlay", "overlay")
+    #@overlay/match by=overlay.subset({"kind":"ScanTemplate"}),expects="1+"
+    ---
+    spec:
+      template:
+        initContainers:
+          #@overlay/match by=overlay.subset({"name": "scan-plugin"}), expects="1+"
+          - name: scan-plugin
+            #@overlay/match missing_ok=True
+            env:
+              #@overlay/appenda
+              - name: GRYPE_DB_UPDATE_URL
+                value: https://tkg-grype.dha-tkgdemo.net:8443/databases/listing.json
+              - name: GRYPE_CHECK_FOR_APP_UPDATE
+                value: "false"
+              - name: GRYPE_DB_AUTO_UPDATE
+                value: "true"
+              - name: GRYPE_DB_MAX_ALLOWED_BUILT_AGE
+                value: 120000h

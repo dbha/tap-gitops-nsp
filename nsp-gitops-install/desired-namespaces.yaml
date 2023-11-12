@@ -1,0 +1,23 @@
+#@data/values
+#@ load("@ytt:data", "data")
+---
+namespaces:
+- name: workshop
+  limits:
+    default:
+      cpu: 1200m
+      memory: 1.5Gi
+    defaultRequest:
+      cpu: 300m   
+      memory: 30Mi
+- name: demo
+  group: devops
+- name: jenkins
+- name: tanzu-java-web-app
+  limits:
+    default:
+      cpu: 1200m
+      memory: 1.5Gi
+    defaultRequest:
+      cpu: 300m   
+      memory: 30Mi
